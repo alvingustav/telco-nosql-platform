@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Telco NoSQL Platform{% endblock %}
+
+{% block extra_head %}
+<style>
+    .analytics-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .analytics-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin: 1rem 0;
+    }
+    
+    .metric-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-chart-bar text-primary"></i>
+                Analytics Dashboard
+            </h1>
+            <p class="text-muted">Comprehensive analytics and insights from your telco data</p>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="analytics-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">Total Calls</h6>
+                        <h3 class="mb-0" id="totalCalls">-</h3>
+                        <small>Last 30 days</small>
+                    </div>
+                    <i class="fas fa-phone fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="analytics-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">Active Customers</h6>
+                        <h3 class="mb-0" id="activeCustomers">-</h3>
+                        <small>Current month</small>
+                    </div>
+                    <i class="fas fa-users fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="analytics-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">Revenue</h6>
+                        <h3 class="mb-0" id="totalRevenue">-</h3>
+                        <small>This month</small>
+                    </div>
+                    <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="analytics-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">Data Usage</h6>
+                        <h3 class="mb-0" id="totalDataUsage">-</h3>
+                        <small>GB consumed</small>
+                    </div>
+                    <i class="fas fa-wifi fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Call Volume Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="callVolumeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Customer Segments
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="customerSegmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Network Type Usage
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="networkUsageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-area"></i> Revenue Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="revenueTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-crown"></i> Top Customers by Usage
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="topCustomersTable">
+                            <thead>
+                                <tr>
+                                    <th>Customer ID</th>
+                                    <th>Segment</th>
+                                    <th>Total Calls</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-city"></i> Top Cities by Revenue
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="topCitiesTable">
+                            <thead>
+                                <tr>
+                                    <th>City</th>
+                                    <th>Customers</th>
+                                    <th>Total Revenue</th>
+                                    <th>Avg Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Controls -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sliders-h"></i> Analytics Controls
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="dateRange" class="form-label">Date Range</label>
+                            <select class="form-select" id="dateRange" onchange="updateAnalytics()">
+                                <option value="7">Last 7 days</option>
+                                <option value="30" selected>Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="365">Last year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="customerSegment" class="form-label">Customer Segment</label>
+                            <select class="form-select" id="customerSegment" onchange="updateAnalytics()">
+                                <option value="">All Segments</option>
+                                <option value="basic">Basic</option>
+                                <option value="premium">Premium</option>
+                                <option value="enterprise">Enterprise</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="networkType" class="form-label">Network Type</label>
+                            <select class="form-select" id="networkType" onchange="updateAnalytics()">
+                                <option value="">All Networks</option>
+                                <option value="2G">2G</option>
+                                <option value="3G">3G</option>
+                                <option value="4G">4G</option>
+                                <option value="5G">5G</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button class="btn btn-primary w-100" onclick="refreshAnalytics()">
+                                    <i class="fas fa-sync"></i> Refresh Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    loadAnalyticsData();
+});
+
+function initializeCharts() {
+    // Call Volume Chart
+    const callVolumeCtx = document.getElementById('callVolumeChart').getContext('2d');
+    charts.callVolume = telcoApp.createChart(callVolumeCtx, 'line', {
+        labels: [],
+        datasets: [{
+            label: 'Voice Calls',
+            data: [],
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.1
+        }, {
+            label: 'Video Calls',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            tension: 0.1
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Number of Calls'
+                }
+            }
+        }
+    });
+
+    // Customer Segment Chart
+    const customerSegmentCtx = document.getElementById('customerSegmentChart').getContext('2d');
+    charts.customerSegment = telcoApp.createChart(customerSegmentCtx, 'doughnut', {
+        labels: [],
+        datasets: [{
+            data: [],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)'
+            ]
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    });
+
+    // Network Usage Chart
+    const networkUsageCtx = document.getElementById('networkUsageChart').getContext('2d');
+    charts.networkUsage = telcoApp.createChart(networkUsageCtx, 'bar', {
+        labels: [],
+        datasets: [{
+            label: 'Data Usage (GB)',
+            data: [],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)'
+            ]
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Data Usage (GB)'
+                }
+            }
+        }
+    });
+
+    // Revenue Trend Chart
+    const revenueTrendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+    charts.revenueTrend = telcoApp.createChart(revenueTrendCtx, 'line', {
+        labels: [],
+        datasets: [{
+            label: 'Monthly Revenue',
+            data: [],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true,
+            tension: 0.1
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Revenue (Million IDR)'
+                }
+            }
+        }
+    });
+}
+
+function loadAnalyticsData() {
+    // Load call volume data
+    telcoApp.apiCall('/api/analytics/call-volume')
+        .then(data => {
+            if (data.status === 'success') {
+                updateCallVolumeChart(data.data);
+            }
+        })
+        .catch(error => console.error('Error loading call volume data:', error));
+
+    // Load customer segments data
+    telcoApp.apiCall('/api/analytics/customer-segments')
+        .then(data => {
+            if (data.status === 'success') {
+                updateCustomerSegmentChart(data.data);
+            }
+        })
+        .catch(error => console.error('Error loading customer segments data:', error));
+
+    // Load revenue trends data
+    telcoApp.apiCall('/api/analytics/revenue-trends')
+        .then(data => {
+            if (data.status === 'success') {
+                updateRevenueTrendChart(data.data);
+            }
+        })
+        .catch(error => console.error('Error loading revenue trends data:', error));
+
+    // Load key metrics
+    loadKeyMetrics();
+    
+    // Load data tables
+    loadTopCustomers();
+    loadTopCities();
+}
+
+function updateCallVolumeChart(data) {
+    charts.callVolume.data.labels = data.labels;
+    charts.callVolume.data.datasets = data.datasets;
+    charts.callVolume.update();
+}
+
+function updateCustomerSegmentChart(data) {
+    charts.customerSegment.data.labels = data.labels;
+    charts.customerSegment.data.datasets[0].data = data.datasets[0].data;
+    charts.customerSegment.data.datasets[0].backgroundColor = data.datasets[0].backgroundColor;
+    charts.customerSegment.update();
+}
+
+function updateRevenueTrendChart(data) {
+    charts.revenueTrend.data.labels = data.labels;
+    charts.revenueTrend.data.datasets[0].data = data.datasets[0].data;
+    charts.revenueTrend.update();
+}
+
+function loadKeyMetrics() {
+    // Simulate loading key metrics
+    setTimeout(() => {
+        document.getElementById('totalCalls').textContent = '2.4M';
+        document.getElementById('activeCustomers').textContent = '45.2K';
+        document.getElementById('totalRevenue').textContent = 'Rp 12.5B';
+        document.getElementById('totalDataUsage').textContent = '850TB';
+    }, 1000);
+}
+
+function loadTopCustomers() {
+    // Simulate loading top customers data
+    const topCustomersData = [
+        { id: 'CUST_000001', segment: 'Enterprise', calls: 1250, revenue: 'Rp 2.5M' },
+        { id: 'CUST_000045', segment: 'Premium', calls: 980, revenue: 'Rp 1.8M' },
+        { id: 'CUST_000123', segment: 'Premium', calls: 875, revenue: 'Rp 1.6M' },
+        { id: 'CUST_000089', segment: 'Enterprise', calls: 820, revenue: 'Rp 2.1M' },
+        { id: 'CUST_000234', segment: 'Basic', calls: 750, revenue: 'Rp 650K' }
+    ];
+
+    const tbody = document.querySelector('#topCustomersTable tbody');
+    tbody.innerHTML = '';
+
+    topCustomersData.forEach(customer => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><code>${customer.id}</code></td>
+            <td><span class="badge bg-primary">${customer.segment}</span></td>
+            <td>${telcoApp.formatNumber(customer.calls)}</td>
+            <td>${customer.revenue}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function loadTopCities() {
+    // Simulate loading top cities data
+    const topCitiesData = [
+        { city: 'Jakarta', customers: 12500, totalRevenue: 'Rp 45.2B', avgRevenue: 'Rp 3.6M' },
+        { city: 'Surabaya', customers: 8200, totalRevenue: 'Rp 28.5B', avgRevenue: 'Rp 3.5M' },
+        { city: 'Bandung', customers: 6800, totalRevenue: 'Rp 22.1B', avgRevenue: 'Rp 3.2M' },
+        { city: 'Medan', customers: 5400, totalRevenue: 'Rp 18.7B', avgRevenue: 'Rp 3.5M' },
+        { city: 'Semarang', customers: 4200, totalRevenue: 'Rp 14.2B', avgRevenue: 'Rp 3.4M' }
+    ];
+
+    const tbody = document.querySelector('#topCitiesTable tbody');
+    tbody.innerHTML = '';
+
+    topCitiesData.forEach(city => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${city.city}</strong></td>
+            <td>${telcoApp.formatNumber(city.customers)}</td>
+            <td>${city.totalRevenue}</td>
+            <td>${city.avgRevenue}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateAnalytics() {
+    const dateRange = document.getElementById('dateRange').value;
+    const customerSegment = document.getElementById('customerSegment').value;
+    const networkType = document.getElementById('networkType').value;
+
+    telcoApp.showAlert('info', `Updating analytics for ${dateRange} days...`);
+    
+    // Simulate data update
+    setTimeout(() => {
+        loadAnalyticsData();
+        telcoApp.showAlert('success', 'Analytics updated successfully');
+    }, 1500);
+}
+
+function refreshAnalytics() {
+    telcoApp.showLoading('Refreshing analytics data...');
+    
+    setTimeout(() => {
+        loadAnalyticsData();
+        telcoApp.hideLoading();
+        telcoApp.showAlert('success', 'Analytics data refreshed');
+    }, 2000);
+}
+
+// Auto-refresh every 5 minutes
+setInterval(function() {
+    loadKeyMetrics();
+}, 300000);
+</script>
+{% endblock %}
