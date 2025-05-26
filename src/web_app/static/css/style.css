@@ -1,0 +1,401 @@
+/* Custom CSS for Telco NoSQL Platform */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+}
+
+/* Global Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--primary-color), #0b5ed7);
+    color: white;
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600;
+}
+
+/* Status Cards */
+.status-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.status-card .card-title {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.status-card h4 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.status-card .fa-2x {
+    opacity: 0.7;
+}
+
+/* Performance Cards */
+.performance-card {
+    background: white;
+    border-left: 4px solid var(--primary-color);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.performance-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.performance-metric:last-child {
+    border-bottom: none;
+}
+
+.metric-value {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Query Interface */
+.query-builder {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.query-result {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.query-execution-time {
+    background: var(--success-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+/* Data Tables */
+.data-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.data-table table {
+    margin: 0;
+}
+
+.data-table th {
+    background: var(--light-color);
+    font-weight: 600;
+    border: none;
+}
+
+.data-table td {
+    border: none;
+    border-bottom: 1px solid #eee;
+}
+
+/* Progress Bars */
+.progress {
+    height: 8px;
+    border-radius: 10px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #0b5ed7);
+    border: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--success-color), #157347);
+    border: none;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--warning-color), #ffca2c);
+    border: none;
+    color: #212529;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, var(--info-color), #3dd5f3);
+    border: none;
+    color: #212529;
+}
+
+/* Alerts */
+.alert {
+    border: none;
+    border-radius: 10px;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: var(--success-color);
+    background-color: #d1e7dd;
+}
+
+.alert-danger {
+    border-left-color: var(--danger-color);
+    background-color: #f8d7da;
+}
+
+.alert-warning {
+    border-left-color: var(--warning-color);
+    background-color: #fff3cd;
+}
+
+.alert-info {
+    border-left-color: var(--info-color);
+    background-color: #d1ecf1;
+}
+
+/* Charts */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 1rem 0;
+}
+
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.chart-legend-item {
+    display: flex;
+    align-items: center;
+    margin: 0 1rem;
+}
+
+.chart-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 0.5rem;
+}
+
+/* Loading States */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Database Status */
+.db-status-card {
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+}
+
+.db-status-card.connected {
+    border-left-color: var(--success-color);
+}
+
+.db-status-card.disconnected {
+    border-left-color: var(--danger-color);
+}
+
+.connection-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+    animation: pulse 2s infinite;
+}
+
+.connection-indicator.connected {
+    background-color: var(--success-color);
+}
+
+.connection-indicator.disconnected {
+    background-color: var(--danger-color);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Performance Comparison */
+.performance-comparison {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.performance-metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.performance-metric-row:last-child {
+    border-bottom: none;
+}
+
+.improvement-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+}
+
+.improvement-positive {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.improvement-negative {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .status-card h4 {
+        font-size: 1.5rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .performance-metric-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .performance-metric-row > div {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .card {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    .data-table th {
+        background-color: #3d3d3d;
+    }
+    
+    .query-result {
+        background-color: #2d2d2d;
+    }
+}
+
+/* Animation utilities */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
