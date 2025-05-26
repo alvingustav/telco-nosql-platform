@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block title %}Database Status - Telco NoSQL Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-database text-primary"></i>
+                Database Status
+            </h1>
+            <p class="text-muted">Monitor and manage your NoSQL database connections</p>
+        </div>
+    </div>
+
+    <!-- Database Connection Status -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-left-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database"></i> Cassandra Database (DB1)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> 
+                                <span class="badge {{ 'bg-success' if cassandra_status.connected else 'bg-danger' }}">
+                                    {{ 'Connected' if cassandra_status.connected else 'Disconnected' }}
+                                </span>
+                            </p>
+                            {% if cassandra_status.connected %}
+                            <p><strong>Keyspace:</strong> {{ cassandra_status.keyspace }}</p>
+                            <p><strong>Tables:</strong> {{ cassandra_status.tables | length }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if cassandra_status.connected %}
+                            <h6>Table Statistics:</h6>
+                            <ul class="list-unstyled">
+                                {% for table, count in cassandra_status.table_counts.items() %}
+                                <li>{{ table }}: <strong>{{ count | format_number }}</strong> records</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if cassandra_status.connected %}
+                    <div class="mt-3">
+                        <h6>Available Indexes:</h6>
+                        <div class="row">
+                            {% for index in cassandra_status.indexes %}
+                            <div class="col-md-6">
+                                <span class="badge bg-info">{{ index }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-primary btn-sm" onclick="testCassandraConnection()">
+                            <i class="fas fa-plug"></i> Test Connection
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="createCassandraIndexes()">
+                            <i class="fas fa-plus"></i> Create Indexes
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="dropCassandraIndexes()">
+                            <i class="fas fa-trash"></i> Drop Indexes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-left-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-leaf"></i> MongoDB Database (DB2)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> 
+                                <span class="badge {{ 'bg-success' if mongodb_status.connected else 'bg-danger' }}">
+                                    {{ 'Connected' if mongodb_status.connected else 'Disconnected' }}
+                                </span>
+                            </p>
+                            {% if mongodb_status.connected %}
+                            <p><strong>Database:</strong> {{ mongodb_status.database }}</p>
+                            <p><strong>Collections:</strong> {{ mongodb_status.collections | length }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if mongodb_status.connected %}
+                            <h6>Collection Statistics:</h6>
+                            <ul class="list-unstyled">
+                                {% for collection, count in mongodb_status.collection_counts.items() %}
+                                <li>{{ collection }}: <strong>{{ count | format_number }}</strong> documents</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if mongodb_status.connected %}
+                    <div class="mt-3">
+                        <h6>Available Indexes:</h6>
+                        <div class="row">
+                            {% for index in mongodb_status.indexes %}
+                            <div class="col-md-6">
+                                <span class="badge bg-success">{{ index }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-success btn-sm" onclick="testMongoConnection()">
+                            <i class="fas fa-plug"></i> Test Connection
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="createMongoIndexes()">
+                            <i class="fas fa-plus"></i> Create Indexes
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="dropMongoIndexes()">
+                            <i class="fas fa-trash"></i> Drop Indexes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Management Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools"></i> Database Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100 mb-2" onclick="setupDatabases()">
+                                <i class="fas fa-cog"></i> Setup Databases
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-info w-100 mb-2" onclick="createAllIndexes()">
+                                <i class="fas fa-plus-circle"></i> Create All Indexes
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-warning w-100 mb-2" onclick="dropAllIndexes()">
+                                <i class="fas fa-minus-circle"></i> Drop All Indexes
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100 mb-2" onclick="refreshStatus()">
+                                <i class="fas fa-sync"></i> Refresh Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Schema Information -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table"></i> Cassandra Schema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Table</th>
+                                    <th>Primary Key</th>
+                                    <th>Records</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>call_records</td>
+                                    <td>call_id (UUID)</td>
+                                    <td>{{ cassandra_status.table_counts.call_records | default(0) | format_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td>sms_records</td>
+                                    <td>sms_id (UUID)</td>
+                                    <td>{{ cassandra_status.table_counts.sms_records | default(0) | format_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td>data_usage</td>
+                                    <td>usage_id (UUID)</td>
+                                    <td>{{ cassandra_status.table_counts.data_usage | default(0) | format_number }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt"></i> MongoDB Schema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Collection</th>
+                                    <th>Primary Key</th>
+                                    <th>Documents</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>customers</td>
+                                    <td>customer_id</td>
+                                    <td>{{ mongodb_status.collection_counts.customers | default(0) | format_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td>subscriptions</td>
+                                    <td>customer_id</td>
+                                    <td>{{ mongodb_status.collection_counts.subscriptions | default(0) | format_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td>billing</td>
+                                    <td>customer_id, billing_month</td>
+                                    <td>{{ mongodb_status.collection_counts.billing | default(0) | format_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td>customer_support</td>
+                                    <td>ticket_id</td>
+                                    <td>{{ mongodb_status.collection_counts.customer_support | default(0) | format_number }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Logs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Connection Logs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="connectionLogs" style="height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                        <div class="text-muted">Connection logs will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function testCassandraConnection() {
+    addConnectionLog('Testing Cassandra connection...');
+    
+    telcoApp.apiCall('/api/database/cassandra/status')
+        .then(data => {
+            if (data.status === 'success' && data.data.connected) {
+                addConnectionLog('✅ Cassandra connection successful');
+                telcoApp.showAlert('success', 'Cassandra connection test passed');
+            } else {
+                addConnectionLog('❌ Cassandra connection failed');
+                telcoApp.showAlert('danger', 'Cassandra connection test failed');
+            }
+        })
+        .catch(error => {
+            addConnectionLog('❌ Cassandra connection error: ' + error.message);
+            telcoApp.showAlert('danger', 'Error testing Cassandra connection');
+        });
+}
+
+function testMongoConnection() {
+    addConnectionLog('Testing MongoDB connection...');
+    
+    telcoApp.apiCall('/api/database/mongodb/status')
+        .then(data => {
+            if (data.status === 'success' && data.data.connected) {
+                addConnectionLog('✅ MongoDB connection successful');
+                telcoApp.showAlert('success', 'MongoDB connection test passed');
+            } else {
+                addConnectionLog('❌ MongoDB connection failed');
+                telcoApp.showAlert('danger', 'MongoDB connection test failed');
+            }
+        })
+        .catch(error => {
+            addConnectionLog('❌ MongoDB connection error: ' + error.message);
+            telcoApp.showAlert('danger', 'Error testing MongoDB connection');
+        });
+}
+
+function createCassandraIndexes() {
+    addConnectionLog('Creating Cassandra indexes...');
+    
+    telcoApp.apiCall('/api/database/indexes/create', 'POST', {database: 'cassandra'})
+        .then(data => {
+            if (data.status === 'success') {
+                addConnectionLog('✅ Cassandra indexes created successfully');
+                telcoApp.showAlert('success', data.message);
+                setTimeout(refreshStatus, 1000);
+            } else {
+                addConnectionLog('❌ Failed to create Cassandra indexes');
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            addConnectionLog('❌ Error creating Cassandra indexes: ' + error.message);
+            telcoApp.showAlert('danger', 'Error creating Cassandra indexes');
+        });
+}
+
+function createMongoIndexes() {
+    addConnectionLog('Creating MongoDB indexes...');
+    
+    telcoApp.apiCall('/api/database/indexes/create', 'POST', {database: 'mongodb'})
+        .then(data => {
+            if (data.status === 'success') {
+                addConnectionLog('✅ MongoDB indexes created successfully');
+                telcoApp.showAlert('success', data.message);
+                setTimeout(refreshStatus, 1000);
+            } else {
+                addConnectionLog('❌ Failed to create MongoDB indexes');
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            addConnectionLog('❌ Error creating MongoDB indexes: ' + error.message);
+            telcoApp.showAlert('danger', 'Error creating MongoDB indexes');
+        });
+}
+
+function dropCassandraIndexes() {
+    if (!confirm('Are you sure you want to drop all Cassandra indexes?')) return;
+    
+    addConnectionLog('Dropping Cassandra indexes...');
+    
+    telcoApp.apiCall('/api/database/indexes/drop', 'POST', {database: 'cassandra'})
+        .then(data => {
+            if (data.status === 'success') {
+                addConnectionLog('✅ Cassandra indexes dropped successfully');
+                telcoApp.showAlert('success', data.message);
+                setTimeout(refreshStatus, 1000);
+            } else {
+                addConnectionLog('❌ Failed to drop Cassandra indexes');
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            addConnectionLog('❌ Error dropping Cassandra indexes: ' + error.message);
+            telcoApp.showAlert('danger', 'Error dropping Cassandra indexes');
+        });
+}
+
+function dropMongoIndexes() {
+    if (!confirm('Are you sure you want to drop all MongoDB indexes?')) return;
+    
+    addConnectionLog('Dropping MongoDB indexes...');
+    
+    telcoApp.apiCall('/api/database/indexes/drop', 'POST', {database: 'mongodb'})
+        .then(data => {
+            if (data.status === 'success') {
+                addConnectionLog('✅ MongoDB indexes dropped successfully');
+                telcoApp.showAlert('success', data.message);
+                setTimeout(refreshStatus, 1000);
+            } else {
+                addConnectionLog('❌ Failed to drop MongoDB indexes');
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            addConnectionLog('❌ Error dropping MongoDB indexes: ' + error.message);
+            telcoApp.showAlert('danger', 'Error dropping MongoDB indexes');
+        });
+}
+
+function setupDatabases() {
+    addConnectionLog('Setting up databases...');
+    telcoApp.showLoading('Setting up databases...');
+    
+    telcoApp.apiCall('/api/database/setup', 'POST')
+        .then(data => {
+            telcoApp.hideLoading();
+            if (data.status === 'success') {
+                addConnectionLog('✅ Databases setup completed successfully');
+                telcoApp.showAlert('success', data.message);
+                setTimeout(refreshStatus, 2000);
+            } else {
+                addConnectionLog('❌ Database setup failed');
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            telcoApp.hideLoading();
+            addConnectionLog('❌ Database setup error: ' + error.message);
+            telcoApp.showAlert('danger', 'Error setting up databases');
+        });
+}
+
+function createAllIndexes() {
+    addConnectionLog('Creating all indexes...');
+    
+    telcoApp.apiCall('/api/database/indexes/create', 'POST', {database: 'both'})
+        .then(data => {
+            if (data.status === 'success') {
+                addConnectionLog('✅ All indexes created successfully');
+                telcoApp.showAlert
