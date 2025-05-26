@@ -107,4 +107,103 @@ def verify_setup(cassandra_manager, mongo_manager):
 def main():
     parser = argparse.ArgumentParser(description='Setup Telco NoSQL Platform databases')
     parser.add_argument('--cassandra-only', action='store_true', help='Setup only Cassandra')
-    parser.add_argument('--
+    parser.add_argument('--mongodb-only', action='store_true', help='Setup only MongoDB')
+    parser.add_argument('--verify-only', action='store_true', help='Only verify setup')
+    parser.add_argument('--drop-existing', action='store_true', help='Drop existing databases')
+    
+    args = parser.parse_args()
+    
+    setup_logging()
+    logger = logging.getLogger(__name__)
+    
+    logger.info("🚀 Starting Telco NoSQL Platform Database Setup")
+    logger.info("=" * 60)
+    
+    cassandra_manager = None
+    mongo_manager = None
+    
+    try:
+        if args.verify_only:
+            logger.info("Verification mode - checking existing setup...")
+            # Quick verification without setup
+            if not args.mongodb_only:
+                cassandra_manager = CassandraManager(**CASSANDRA_CONFIG)
+                if cassandra_manager.connect():
+                    logger.info("✅ Cassandra connection verified")
+                else:
+                    logger.error("❌ Cassandra connection failed")
+            
+            if not args.cassandra_only:
+                mongo_manager = MongoManager(**MONGODB_CONFIG)
+                if mongo_manager.connect():
+                    logger.info("✅ MongoDB connection verified")
+                else:
+                    logger.error("❌ MongoDB connection failed")
+            
+            return 0
+        
+        # Drop existing databases if requested
+        if args.drop_existing:
+            logger.warning("⚠️ Dropping existing databases...")
+            if not args.mongodb_only:
+                try:
+                    cassandra_manager = CassandraManager(**CASSANDRA_CONFIG)
+                    if cassandra_manager.connect():
+                        cassandra_manager.session.execute(f"DROP KEYSPACE IF EXISTS {CASSANDRA_CONFIG['keyspace']}")
+                        logger.info("✅ Cassandra keyspace dropped")
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not drop Cassandra keyspace: {e}")
+            
+            if not args.cassandra_only:
+                try:
+                    mongo_manager = MongoManager(**MONGODB_CONFIG)
+                    if mongo_manager.connect():
+                        mongo_manager.client.drop_database(MONGODB_CONFIG['database'])
+                        logger.info("✅ MongoDB database dropped")
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not drop MongoDB database: {e}")
+        
+        # Setup databases
+        if not args.mongodb_only:
+            cassandra_manager = setup_cassandra()
+        
+        if not args.cassandra_only:
+            mongo_manager = setup_mongodb()
+        
+        # Verify setup
+        if cassandra_manager or mongo_manager:
+            verify_setup(cassandra_manager, mongo_manager)
+            logger.info("✅ Database setup completed successfully!")
+            logger.info("=" * 60)
+            
+            # Print connection details
+            if cassandra_manager:
+                logger.info(f"📊 Cassandra: {CASSANDRA_CONFIG['hosts'][0]}:{CASSANDRA_CONFIG['port']}")
+                logger.info(f"🔑 Keyspace: {CASSANDRA_CONFIG['keyspace']}")
+            
+            if mongo_manager:
+                logger.info(f"📊 MongoDB: {MONGODB_CONFIG['uri']}")
+                logger.info(f"🔑 Database: {MONGODB_CONFIG['database']}")
+            
+            logger.info("=" * 60)
+            logger.info("🎉 Ready to load data and run queries!")
+            return 0
+        else:
+            logger.error("❌ Database setup failed")
+            return 1
+            
+    except KeyboardInterrupt:
+        logger.info("\n⚠️ Setup interrupted by user")
+        return 1
+    except Exception as e:
+        logger.error(f"💥 Unexpected error: {e}")
+        return 1
+    finally:
+        # Cleanup connections
+        if cassandra_manager and cassandra_manager.cluster:
+            cassandra_manager.close()
+        if mongo_manager and mongo_manager.client:
+            mongo_manager.close()
+
+if __name__ == '__main__':
+    sys.exit(main())
