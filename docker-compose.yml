@@ -31,6 +31,8 @@ services:
     environment:
       - CASSANDRA_HOST=cassandra
       - MONGO_HOST=mongodb
+    env_file:
+      - .env
 
 volumes:
   cassandra_data:
