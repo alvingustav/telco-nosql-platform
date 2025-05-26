@@ -14,6 +14,7 @@ Platform analisis data telekomunikasi menggunakan Cassandra (DB1) dan MongoDB (D
 
 ### 1. Clone Repository
 git clone https://github.com/alvingustav/telco-nosql-platform
+
 cd telco-nosql-platform
 
 ### 2. Install Dependencies
@@ -23,13 +24,18 @@ pip install -r Requirements.txt
 ### 3. Setup Databases
 #### Cassandra
 wget https://downloads.apache.org/cassandra/4.1.3/apache-cassandra-4.1.3-bin.tar.gz
+
 tar -xzf apache-cassandra-4.1.3-bin.tar.gz
+
 cd apache-cassandra-4.1.3
+
 bin/cassandra -f
 
 #### MongoDB
 sudo apt-get install -y mongodb
+
 sudo systemctl start mongod
+
 sudo systemctl enable mongod
 
 ### 4. Load Data
