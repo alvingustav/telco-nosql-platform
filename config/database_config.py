@@ -1,38 +1,38 @@
 import os
-from typing import Dict, Any
 
-# Database Configuration Constants
+# Cassandra Configuration
 CASSANDRA_CONFIG = {
-    'hosts': ['127.0.0.1'],
-    'port': 9042,
-    'keyspace': 'telco_cdr',
-    'replication_factor': 1
+    'hosts': [os.getenv("CASSANDRA_HOST", "cassandra")],
+    'port': int(os.getenv("CASSANDRA_PORT", 9042)),
+    'keyspace': os.getenv("CASSANDRA_KEYSPACE", "telco_cdr"),
+    'replication_factor': int(os.getenv("CASSANDRA_REPLICATION_FACTOR", 1))
 }
 
+# MongoDB Configuration
 MONGODB_CONFIG = {
-    'uri': 'mongodb://localhost:27017/',
-    'database': 'telco_customers',
-    'connection_timeout': 30000
+    'uri': os.getenv("MONGO_URI", "mongodb://mongodb:27017/"),
+    'database': os.getenv("MONGO_DB", "telco_customers"),
+    'connection_timeout': int(os.getenv("MONGO_TIMEOUT", 30000))
 }
 
-# Application Configuration
+# App Configuration
 APP_CONFIG = {
-    'debug': True,
-    'host': '0.0.0.0',
-    'port': 5000,
-    'secret_key': 'telco-nosql-platform-secret-key-2025'
+    'debug': os.getenv("FLASK_DEBUG", "1") == "1",
+    'host': os.getenv("FLASK_HOST", "0.0.0.0"),
+    'port': int(os.getenv("FLASK_PORT", 5000)),
+    'secret_key': os.getenv("FLASK_SECRET_KEY", "telco-nosql-platform-secret-key-2025")
 }
 
 # Data Export Configuration
 DATA_EXPORT_CONFIG = {
-    'export_directory': 'telco_data_export',
-    'batch_size': 5000,
-    'max_records_per_file': 100000
+    'export_directory': os.getenv("EXPORT_DIR", "telco_data_export"),
+    'batch_size': int(os.getenv("EXPORT_BATCH_SIZE", 5000)),
+    'max_records_per_file': int(os.getenv("EXPORT_MAX_RECORDS", 100000))
 }
 
 # Performance Testing Configuration
 PERFORMANCE_CONFIG = {
-    'test_iterations': 5,
-    'warmup_queries': 2,
-    'timeout_seconds': 30
+    'test_iterations': int(os.getenv("PERF_ITER", 5)),
+    'warmup_queries': int(os.getenv("PERF_WARMUP", 2)),
+    'timeout_seconds': int(os.getenv("PERF_TIMEOUT", 30))
 }
