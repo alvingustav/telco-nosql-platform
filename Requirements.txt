@@ -1,0 +1,29 @@
+# Core dependencies
+flask==2.3.3
+flask-socketio==5.3.6
+python-socketio==5.8.0
+python-engineio==4.7.1
+
+# Database drivers
+cassandra-driver==3.28.0
+pymongo==4.5.0
+
+# Data processing
+pandas==2.1.1
+numpy==1.24.3
+faker==19.6.2
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+uuid==1.30
+
+# Development and testing
+pytest==7.4.2
+pytest-flask==1.2.0
+pytest-cov==4.1.0
+
+# Optional: For enhanced features
+requests==2.31.0
+jinja2==3.1.2
+markupsafe==2.1.3
