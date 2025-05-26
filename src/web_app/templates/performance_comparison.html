@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Comparison - Telco NoSQL Platform{% endblock %}
+
+{% block extra_head %}
+<style>
+    .performance-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .performance-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .comparison-row {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #007bff;
+    }
+    
+    .improvement-badge {
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+    }
+    
+    .improvement-positive {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .improvement-negative {
+        background: linear-gradient(135deg, #dc3545, #fd7e14);
+        color: white;
+    }
+    
+    .test-controls {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-stopwatch text-primary"></i>
+                Performance Comparison
+            </h1>
+            <p class="text-muted">Compare query performance with and without database indexes</p>
+        </div>
+    </div>
+
+    <!-- Test Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="test-controls">
+                <h5 class="mb-3">
+                    <i class="fas fa-play-circle"></i> Performance Testing Controls
+                </h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="testIterations" class="form-label">Test Iterations</label>
+                        <select class="form-select" id="testIterations">
+                            <option value="3">3 iterations</option>
+                            <option value="5" selected>5 iterations</option>
+                            <option value="10">10 iterations</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="testType" class="form-label">Test Type</label>
+                        <select class="form-select" id="testType">
+                            <option value="all" selected>All Queries</option>
+                            <option value="call_analytics">Call Analytics Only</option>
+                            <option value="customer_insights">Customer Insights Only</option>
+                            <option value="combined_behavior">Combined Query Only</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="includeWarmup" class="form-label">Warmup</label>
+                        <select class="form-select" id="includeWarmup">
+                            <option value="true" selected>Include Warmup</option>
+                            <option value="false">Skip Warmup</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button class="btn btn-primary w-100" onclick="runPerformanceTest()">
+                                <i class="fas fa-rocket"></i> Run Performance Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <button class="btn btn-warning w-100" onclick="createAllIndexes()">
+                            <i class="fas fa-plus"></i> Create All Indexes
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-danger w-100" onclick="dropAllIndexes()">
+                            <i class="fas fa-minus"></i> Drop All Indexes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Results -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Performance Test Results
+                    </h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportResults()" id="exportBtn" disabled>
+                            <i class="fas fa-download"></i> Export Results
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearResults()">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="performanceResults">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-tachometer-alt fa-3x mb-3"></i>
+                            <p>Run a performance test to see results here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics Chart -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Performance Comparison Chart
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 400px;">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Test Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="testInfo">
+                        <p class="text-muted">No test results available</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Results Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table"></i> Detailed Performance Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="detailedResultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Query Type</th>
+                                    <th>Database</th>
+                                    <th>Without Index (ms)</th>
+                                    <th>With Index (ms)</th>
+                                    <th>Improvement</th>
+                                    <th>Speedup Factor</th>
+                                    <th>Records Processed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">No performance data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> Performance Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recommendations">
+                        <p class="text-muted">Run performance tests to get optimization recommendations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let performanceChart;
+let currentTestResults = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializePerformanceChart();
+});
+
+function initializePerformanceChart() {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    
+    performanceChart = telcoApp.createChart(ctx, 'bar', {
+        labels: [],
+        datasets: [{
+            label: 'Without Index (ms)',
+            data: [],
+            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }, {
+            label: 'With Index (ms)',
+            data: [],
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Execution Time (ms)'
+                }
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Query Performance Comparison'
+            },
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        }
+    });
+}
+
+function runPerformanceTest() {
+    const iterations = document.getElementById('testIterations').value;
+    const testType = document.getElementById('testType').value;
+    const includeWarmup = document.getElementById('includeWarmup').value === 'true';
+    
+    telcoApp.showLoading('Running performance tests...');
+    
+    // Disable test button
+    const testButton = document.querySelector('button[onclick="runPerformanceTest()"]');
+    testButton.disabled = true;
+    testButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+    
+    telcoApp.apiCall('/api/performance-test', 'POST', {
+        iterations: parseInt(iterations),
+        test_type: testType,
+        include_warmup: includeWarmup
+    })
+    .then(data => {
+        telcoApp.hideLoading();
+        
+        if (data.status === 'success') {
+            currentTestResults = data.results;
+            displayPerformanceResults(data.results);
+            updatePerformanceChart(data.results);
+            displayTestInfo(data.results);
+            displayDetailedResults(data.results);
+            displayRecommendations(data.results);
+            
+            document.getElementById('exportBtn').disabled = false;
+            telcoApp.showAlert('success', 'Performance test completed successfully');
+        } else {
+            telcoApp.showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        telcoApp.hideLoading();
+        telcoApp.showAlert('danger', 'Performance test failed: ' + error.message);
+    })
+    .finally(() => {
+        // Re-enable test button
+        testButton.disabled = false;
+        testButton.innerHTML = '<i class="fas fa-rocket"></i> Run Performance Test';
+    });
+}
+
+function displayPerformanceResults(results) {
+    const resultsDiv = document.getElementById('performanceResults');
+    
+    let html = `
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="performance-card">
+                    <h6>Average Improvement</h6>
+                    <h3>${results.summary.average_improvement.toFixed(2)}%</h3>
+                    <small>Across all queries</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="performance-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h6>Best Improvement</h6>
+                    <h3>${results.summary.best_improvement.toFixed(2)}%</h3>
+                    <small>Single query</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="performance-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h6>Time Saved</h6>
+                    <h3>${(results.summary.total_time_saved * 1000).toFixed(0)}ms</h3>
+                    <small>Total time saved</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Individual query results
+    html += '<h6>Individual Query Performance:</h6>';
+    
+    Object.entries(results.individual_queries).forEach(([queryName, metrics]) => {
+        const improvementClass = metrics.improvement_percent > 0 ? 'improvement-positive' : 'improvement-negative';
+        
+        html += `
+            <div class="comparison-row">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h6 class="mb-0">${formatQueryName(queryName)}</h6>
+                        <small class="text-muted">${getQueryDescription(queryName)}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Without Index:</strong><br>
+                        <span class="text-danger">${(metrics.without_index * 1000).toFixed(2)}ms</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>With Index:</strong><br>
+                        <span class="text-success">${(metrics.with_index * 1000).toFixed(2)}ms</span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="improvement-badge ${improvementClass}">
+                            ${metrics.improvement_percent > 0 ? '+' : ''}${metrics.improvement_percent.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: ${Math.min(metrics.improvement_percent, 100)}%">
+                                ${metrics.improvement_percent.toFixed(1)}% faster
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    resultsDiv.innerHTML = html;
+}
+
+function updatePerformanceChart(results) {
+    const labels = [];
+    const withoutIndexData = [];
+    const withIndexData = [];
+    
+    Object.entries(results.individual_queries).forEach(([queryName, metrics]) => {
+        labels.push(formatQueryName(queryName));
+        withoutIndexData.push((metrics.without_index * 1000).toFixed(2));
+        withIndexData.push((metrics.with_index * 1000).toFixed(2));
+    });
+    
+    performanceChart.data.labels = labels;
+    performanceChart.data.datasets[0].data = withoutIndexData;
+    performanceChart.data.datasets[1].data = withIndexData;
+    performanceChart.update();
+}
+
+function displayTestInfo(results) {
+    const testInfoDiv = document.getElementById('testInfo');
+    
+    const html = `
+        <div class="mb-3">
+            <h6>Test Summary</h6>
+            <ul class="list-unstyled">
+                <li><strong>Queries Tested:</strong> ${results.summary.queries_tested}</li>
+                <li><strong>Total Time Without Indexes:</strong> ${(results.summary.total_time_without_indexes * 1000).toFixed(2)}ms</li>
+                <li><strong>Total Time With Indexes:</strong> ${(results.summary.total_time_with_indexes * 1000).toFixed(2)}ms</li>
+                <li><strong>Time Saved:</strong> ${(results.summary.total_time_saved * 1000).toFixed(2)}ms</li>
+            </ul>
+        </div>
+        
+        <div class="mb-3">
+            <h6>Performance Metrics</h6>
+            <ul class="list-unstyled">
+                <li><strong>Average Improvement:</strong> ${results.summary.average_improvement.toFixed(2)}%</li>
+                <li><strong>Best Performance:</strong> ${results.summary.best_improvement.toFixed(2)}%</li>
+                <li><strong>Worst Performance:</strong> ${results.summary.worst_improvement.toFixed(2)}%</li>
+            </ul>
+        </div>
+    `;
+    
+    testInfoDiv.innerHTML = html;
+}
+
+function displayDetailedResults(results) {
+    const tbody = document.querySelector('#detailedResultsTable tbody');
+    tbody.innerHTML = '';
+    
+    Object.entries(results.individual_queries).forEach(([queryName, metrics]) => {
+        const row = document.createElement('tr');
+        const speedupFactor = metrics.without_index / metrics.with_index;
+        
+        row.innerHTML = `
+            <td><strong>${formatQueryName(queryName)}</strong></td>
+            <td>${getQueryDatabase(queryName)}</td>
+            <td class="text-danger">${(metrics.without_index * 1000).toFixed(2)}</td>
+            <td class="text-success">${(metrics.with_index * 1000).toFixed(2)}</td>
+            <td>
+                <span class="badge ${metrics.improvement_percent > 0 ? 'bg-success' : 'bg-danger'}">
+                    ${metrics.improvement_percent.toFixed(1)}%
+                </span>
+            </td>
+            <td>${speedupFactor.toFixed(2)}x</td>
+            <td>${telcoApp.formatNumber(metrics.records_processed || 0)}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function displayRecommendations(results) {
+    const recommendationsDiv = document.getElementById('recommendations');
+    
+    let html = '<div class="row">';
+    
+    if (results.recommendations && results.recommendations.length > 0) {
+        results.recommendations.forEach(recommendation => {
+            let badgeClass = 'bg-info';
+            let icon = 'fas fa-info-circle';
+            
+            if (recommendation.includes('Excellent')) {
+                badgeClass = 'bg-success';
+                icon = 'fas fa-check-circle';
+            } else if (recommendation.includes('Good')) {
+                badgeClass = 'bg-primary';
+                icon = 'fas fa-thumbs-up';
+            } else if (recommendation.includes('review') || recommendation.includes('consider')) {
+                badgeClass = 'bg-warning';
+                icon = 'fas fa-exclamation-triangle';
+            } else if (recommendation.includes('No improvement')) {
+                badgeClass = 'bg-danger';
+                icon = 'fas fa-times-circle';
+            }
+            
+            html += `
+                <div class="col-12 mb-2">
+                    <div class="alert alert-light border-start border-4 border-primary">
+                        <i class="${icon}"></i>
+                        <span class="badge ${badgeClass} me-2">Recommendation</span>
+                        ${recommendation}
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        html += `
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>General Recommendations:</strong>
+                    <ul class="mt-2 mb-0">
+                        <li>Ensure proper indexing on frequently queried columns</li>
+                        <li>Consider composite indexes for multi-column queries</li>
+                        <li>Monitor query execution plans regularly</li>
+                        <li>Optimize data distribution across nodes</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    recommendationsDiv.innerHTML = html;
+}
+
+function formatQueryName(queryName) {
+    const names = {
+        'query1_call_analytics': 'Call Analytics',
+        'query2_customer_insights': 'Customer Insights',
+        'query3_combined': 'Combined Analysis'
+    };
+    return names[queryName] || queryName;
+}
+
+function getQueryDescription(queryName) {
+    const descriptions = {
+        'query1_call_analytics': 'Cassandra - Call volume analysis',
+        'query2_customer_insights': 'MongoDB - Customer segmentation',
+        'query3_combined': 'Combined - Cross-database analysis'
+    };
+    return descriptions[queryName] || 'Query description';
+}
+
+function getQueryDatabase(queryName) {
+    const databases = {
+        'query1_call_analytics': 'Cassandra',
+        'query2_customer_insights': 'MongoDB',
+        'query3_combined': 'Both'
+    };
+    return databases[queryName] || 'Unknown';
+}
+
+function createAllIndexes() {
+    telcoApp.showLoading('Creating indexes...');
+    
+    telcoApp.apiCall('/api/create-indexes', 'POST
