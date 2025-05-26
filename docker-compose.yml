@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   cassandra:
     image: cassandra:4.1
@@ -23,16 +24,13 @@ services:
     container_name: telco-app
     ports:
       - "5000:5000"
+    env_file:
+      - .env
     depends_on:
       - cassandra
       - mongodb
     volumes:
       - .:/app
-    environment:
-      - CASSANDRA_HOST=cassandra
-      - MONGO_HOST=mongodb
-    env_file:
-      - .env
 
 volumes:
   cassandra_data:
