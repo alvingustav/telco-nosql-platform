@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Telco NoSQL Platform{% endblock %}
+
+{% block extra_head %}
+<style>
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-online {
+        background-color: #28a745;
+    }
+    
+    .status-offline {
+        background-color: #dc3545;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-tachometer-alt text-primary"></i>
+                Dashboard Overview
+            </h1>
+            <p class="text-muted">Real-time monitoring of your Telco NoSQL Platform</p>
+        </div>
+    </div>
+
+    <!-- System Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">Cassandra DB</div>
+                        <div class="metric-value">
+                            <span class="status-indicator {{ 'status-online' if system_status.cassandra_connected else 'status-offline' }}"></span>
+                            {{ 'Online' if system_status.cassandra_connected else 'Offline' }}
+                        </div>
+                    </div>
+                    <div>
+                        <i class="fas fa-database fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">MongoDB</div>
+                        <div class="metric-value">
+                            <span class="status-indicator {{ 'status-online' if system_status.mongodb_connected else 'status-offline' }}"></span>
+                            {{ 'Online' if system_status.mongodb_connected else 'Offline' }}
+                        </div>
+                    </div>
+                    <div>
+                        <i class="fas fa-leaf fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">Total Records</div>
+                        <div class="metric-value">{{ data_summary.total_records | default(0) | int | format_number }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-chart-bar fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">Queries Today</div>
+                        <div class="metric-value">{{ recent_queries | length }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-search fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-primary w-100" onclick="setupDatabases()">
+                                <i class="fas fa-cog"></i> Setup Databases
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-success w-100" onclick="loadExistingData()">
+                                <i class="fas fa-upload"></i> Load Data
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-info w-100" onclick="createIndexes()">
+                                <i class="fas fa-index"></i> Create Indexes
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-warning w-100" onclick="runPerformanceTest()">
+                                <i class="fas fa-tachometer-alt"></i> Performance Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Directory Configuration -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-folder-open"></i> Data Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text">Data Directory:</span>
+                                <input type="text" class="form-control" id="dataDirectory" 
+                                       value="telco_data_export" placeholder="Path to data directory">
+                                <button class="btn btn-outline-secondary" onclick="verifyDataDirectory()">
+                                    <i class="fas fa-search"></i> Verify
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-success w-100" onclick="loadExistingData()">
+                                <i class="fas fa-upload"></i> Load Existing Data
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Data verification results -->
+                    <div id="dataVerification" class="mt-3" style="display: none;">
+                        <h6>Data Directory Verification:</h6>
+                        <div id="verificationResults"></div>
+                    </div>
+                    
+                    <!-- Loading progress -->
+                    <div id="loadingProgress" class="mt-3" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="loadingMessage" class="text-muted">Preparing...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics & Recent Activity -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Performance Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i> Recent Queries
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for query in recent_queries %}
+                                <tr>
+                                    <td>{{ query.timestamp[:19] }}</td>
+                                    <td>{{ query.type }}</td>
+                                    <td>{{ query.duration }}ms</td>
+                                    <td>
+                                        <span class="badge bg-success">Success</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not recent_queries %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No recent queries</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database"></i> Cassandra Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="text-primary">{{ data_summary.cassandra_data.call_records | default(0) | int | format_number }}</h4>
+                                <small class="text-muted">Call Records</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="text-info">{{ data_summary.cassandra_data.sms_records | default(0) | int | format_number }}</h4>
+                                <small class="text-muted">SMS Records</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="text-center">
+                                <h4 class="text-warning">{{ data_summary.cassandra_data.data_usage | default(0) | int | format_number }}</h4>
+                                <small class="text-muted">Data Usage Records</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-leaf"></i> MongoDB Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="text-success">{{ data_summary.mongodb_data.customers | default(0) | int | format_number }}</h4>
+                                <small class="text-muted">Customers</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="text-danger">{{ data_summary.mongodb_data.subscriptions | default(0) | int | format_number }}</h4>
+                                <small class="text-muted">Subscriptions</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="text-primary">{{ data_summary.mongodb_data.billing | default(0) | int | format_number }}</h4>
+                                <small class="text-muted">Billing Records</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="text-secondary">{{ data_summary.mongodb_data.customer_support | default(0) | int | format_number }}</h4>
+                                <small class="text-muted">Support Tickets</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Dashboard specific JavaScript
+function setupDatabases() {
+    telcoApp.showLoading('Setting up databases...');
+    
+    telcoApp.apiCall('/api/setup-databases', 'POST')
+        .then(data => {
+            telcoApp.hideLoading();
+            if (data.status === 'success') {
+                telcoApp.showAlert('success', data.message);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            telcoApp.hideLoading();
+            telcoApp.showAlert('danger', 'Error: ' + error.message);
+        });
+}
+
+function verifyDataDirectory() {
+    const dataDirectory = document.getElementById('dataDirectory').value;
+    
+    telcoApp.apiCall('/api/verify-data-directory', 'POST', {data_directory: dataDirectory})
+        .then(data => {
+            if (data.status === 'success') {
+                displayVerificationResults(data.summary);
+            } else {
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            telcoApp.showAlert('danger', 'Error: ' + error.message);
+        });
+}
+
+function displayVerificationResults(summary) {
+    const resultsDiv = document.getElementById('verificationResults');
+    const verificationDiv = document.getElementById('dataVerification');
+    
+    let html = `
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Directory:</strong> ${summary.directory}</p>
+                <p><strong>Files Found:</strong> ${summary.files_found}/${summary.total_files}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>File Status:</h6>
+                <ul class="list-unstyled">
+    `;
+    
+    for (const [filename, exists] of Object.entries(summary.file_status)) {
+        const icon = exists ? 'fas fa-check text-success' : 'fas fa-times text-danger';
+        const records = summary.estimated_records[filename] || 'N/A';
+        html += `<li><i class="${icon}"></i> ${filename} (${telcoApp.formatNumber(records)} records)</li>`;
+    }
+    
+    html += `
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    resultsDiv.innerHTML = html;
+    verificationDiv.style.display = 'block';
+}
+
+function loadExistingData() {
+    const dataDirectory = document.getElementById('dataDirectory').value;
+    
+    // Show loading progress
+    document.getElementById('loadingProgress').style.display = 'block';
+    
+    // Setup WebSocket for progress updates
+    socket.on('loading_progress', function(data) {
+        const progressBar = document.querySelector('#loadingProgress .progress-bar');
+        const loadingMessage = document.getElementById('loadingMessage');
+        
+        progressBar.style.width = data.progress + '%';
+        progressBar.setAttribute('aria-valuenow', data.progress);
+        loadingMessage.textContent = data.message;
+    });
+    
+    telcoApp.apiCall('/api/load-existing-data', 'POST', {data_directory: dataDirectory})
+        .then(data => {
+            document.getElementById('loadingProgress').style.display = 'none';
+            
+            if (data.status === 'success') {
+                telcoApp.showAlert('success', data.message);
+                
+                // Display loading results
+                let resultHtml = `
+                    <div class="alert alert-info">
+                        <h6>Data Loading Results:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Cassandra:</strong>
+                                <ul>
+                                    <li>Call Records: ${telcoApp.formatNumber(data.cassandra_results.call_records)}</li>
+                                    <li>SMS Records: ${telcoApp.formatNumber(data.cassandra_results.sms_records)}</li>
+                                    <li>Data Usage: ${telcoApp.formatNumber(data.cassandra_results.data_usage)}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>MongoDB:</strong>
+                                <ul>
+                                    <li>Customers: ${telcoApp.formatNumber(data.mongodb_results.customers)}</li>
+                                    <li>Subscriptions: ${telcoApp.formatNumber(data.mongodb_results.subscriptions)}</li>
+                                    <li>Billing: ${telcoApp.formatNumber(data.mongodb_results.billing)}</li>
+                                    <li>Support: ${telcoApp.formatNumber(data.mongodb_results.customer_support)}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p><strong>Total Records Loaded: ${telcoApp.formatNumber(data.total_records)}</strong></p>
+                    </div>
+                `;
+                
+                document.getElementById('verificationResults').innerHTML = resultHtml;
+                setTimeout(() => location.reload(), 3000);
+                
+            } else {
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            document.getElementById('loadingProgress').style.display = 'none';
+            telcoApp.showAlert('danger', 'Error: ' + error.message);
+        });
+}
+
+function createIndexes() {
+    telcoApp.showLoading('Creating indexes...');
+    
+    telcoApp.apiCall('/api/create-indexes', 'POST', {database: 'both'})
+        .then(data => {
+            telcoApp.hideLoading();
+            if (data.status === 'success') {
+                telcoApp.showAlert('success', data.message);
+            } else {
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            telcoApp.hideLoading();
+            telcoApp.showAlert('danger', 'Error: ' + error.message);
+        });
+}
+
+function runPerformanceTest() {
+    telcoApp.showLoading('Running performance tests...');
+    
+    telcoApp.apiCall('/api/performance-test', 'POST')
+        .then(data => {
+            telcoApp.hideLoading();
+            if (data.status === 'success') {
+                telcoApp.showAlert('success', 'Performance test completed');
+                window.location.href = '/performance-comparison';
+            } else {
+                telcoApp.showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            telcoApp.hideLoading();
+            telcoApp.showAlert('danger', 'Error: ' + error.message);
+        });
+}
+
+// Initialize performance chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    
+    const performanceChart = telcoApp.createChart(ctx, 'line', {
+        labels: ['Query 1', 'Query 2', 'Query 3', 'Query 4', 'Query 5'],
+        datasets: [{
+            label: 'Without Index (ms)',
+            data: [500, 800, 1200, 650, 900],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            tension: 0.1
+        }, {
+            label: 'With Index (ms)',
+            data: [100, 150, 300, 120, 180],
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.1
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Execution Time (ms)'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Query Type'
+                }
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Query Performance Comparison'
+            },
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        }
+    });
+});
+
+// Auto-refresh system status every 30 seconds
+setInterval(function() {
+    socket.emit('request_system_status');
+}, 30000);
+</script>
+{% endblock %}
