@@ -425,4 +425,6 @@ def get_uptime():
     return "Running"
 
 if __name__ == '__main__':
+    import eventlet
+    eventlet.monkey_patch()
     socketio.run(app, debug=APP_CONFIG['debug'], host=APP_CONFIG['host'], port=APP_CONFIG['port'])
