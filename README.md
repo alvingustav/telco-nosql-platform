@@ -40,7 +40,9 @@ sudo systemctl enable mongod
 
 ### 4. Load Data
 python scripts/setup_databases.py
+
 python scripts/load_existing_data.py --data-dir telco_data_export
+
 
 ### 5. Run Platform
 python src/web_app/app.py
